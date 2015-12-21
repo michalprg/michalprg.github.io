@@ -1,0 +1,111 @@
+---
+title: "PML Project"
+author: "Michal Dostal"
+date: "Monday, December 21, 2015"
+output: html_document
+---
+
+We start by reading in the training and testing data and getting rid of columns that seem either unsuitable for creating a predictive model (line number, user name, timestamp) or contain NA values. I made my choice of variables by looking at the content of various columns and counting sum(is.na(...)) of columns.
+
+```{r getclean, cache=TRUE}
+pml=read.csv('pml-training.csv')
+ver=read.csv('pml-testing.csv')
+
+pmln=data.frame(pml$roll_belt, pml$pitch_belt, pml$yaw_belt, pml$total_accel_belt, pml$gyros_belt_x, 
+                pml$gyros_belt_y, pml$gyros_belt_z, pml$accel_belt_x, pml$accel_belt_y, 
+                pml$accel_belt_z, pml$magnet_belt_x, pml$magnet_belt_y, pml$magnet_belt_z, 
+                pml$roll_arm, pml$pitch_arm, pml$yaw_arm, pml$total_accel_arm, 
+                pml$gyros_arm_x, pml$gyros_arm_y, pml$gyros_arm_z, pml$accel_arm_x, 
+                pml$accel_arm_y, pml$accel_arm_z, pml$magnet_arm_x, pml$magnet_arm_y, 
+                pml$magnet_arm_z, pml$roll_dumbbell, 
+                pml$pitch_dumbbell, pml$yaw_dumbbell, pml$total_accel_dumbbell, 
+                pml$gyros_dumbbell_x, pml$gyros_dumbbell_y, pml$gyros_dumbbell_z, 
+                pml$accel_dumbbell_x, pml$accel_dumbbell_y, pml$accel_dumbbell_z, 
+                pml$magnet_dumbbell_x, pml$magnet_dumbbell_y, pml$magnet_dumbbell_z, 
+                pml$roll_forearm, pml$pitch_forearm, pml$yaw_forearm, 
+                pml$total_accel_forearm, pml$gyros_forearm_x, pml$gyros_forearm_y, 
+                pml$gyros_forearm_z, pml$accel_forearm_x, pml$accel_forearm_y, 
+                pml$accel_forearm_z, pml$magnet_forearm_x, pml$magnet_forearm_y, 
+                pml$magnet_forearm_z, pml$classe)
+
+colnames(pmln)=c( "roll_belt",
+      "pitch_belt", "yaw_belt", "total_accel_belt", "gyros_belt_x", 
+      "gyros_belt_y", "gyros_belt_z", "accel_belt_x", "accel_belt_y", 
+      "accel_belt_z", "magnet_belt_x", "magnet_belt_y", "magnet_belt_z", 
+      "roll_arm", "pitch_arm", "yaw_arm", "total_accel_arm", 
+      "gyros_arm_x", "gyros_arm_y", "gyros_arm_z", "accel_arm_x", 
+      "accel_arm_y", "accel_arm_z", "magnet_arm_x", "magnet_arm_y", 
+      "magnet_arm_z", "roll_dumbbell", 
+      "pitch_dumbbell", "yaw_dumbbell", "total_accel_dumbbell", 
+      "gyros_dumbbell_x", "gyros_dumbbell_y", "gyros_dumbbell_z", 
+      "accel_dumbbell_x", "accel_dumbbell_y", "accel_dumbbell_z", 
+      "magnet_dumbbell_x", "magnet_dumbbell_y", "magnet_dumbbell_z", 
+      "roll_forearm", "pitch_forearm", "yaw_forearm", 
+      "total_accel_forearm", "gyros_forearm_x", "gyros_forearm_y", 
+      "gyros_forearm_z", "accel_forearm_x", "accel_forearm_y", 
+      "accel_forearm_z", "magnet_forearm_x", "magnet_forearm_y", 
+      "magnet_forearm_z", "classe")
+
+vern=data.frame(ver$roll_belt, ver$pitch_belt, ver$yaw_belt, ver$total_accel_belt, ver$gyros_belt_x, 
+                ver$gyros_belt_y, ver$gyros_belt_z, ver$accel_belt_x, ver$accel_belt_y, 
+                ver$accel_belt_z, ver$magnet_belt_x, ver$magnet_belt_y, ver$magnet_belt_z, 
+                ver$roll_arm, ver$pitch_arm, ver$yaw_arm, ver$total_accel_arm, 
+                ver$gyros_arm_x, ver$gyros_arm_y, ver$gyros_arm_z, ver$accel_arm_x, 
+                ver$accel_arm_y, ver$accel_arm_z, ver$magnet_arm_x, ver$magnet_arm_y, 
+                ver$magnet_arm_z, ver$roll_dumbbell, 
+                ver$pitch_dumbbell, ver$yaw_dumbbell, ver$total_accel_dumbbell, 
+                ver$gyros_dumbbell_x, ver$gyros_dumbbell_y, ver$gyros_dumbbell_z, 
+                ver$accel_dumbbell_x, ver$accel_dumbbell_y, ver$accel_dumbbell_z,
+                ver$magnet_dumbbell_x, ver$magnet_dumbbell_y, ver$magnet_dumbbell_z, 
+                ver$roll_forearm, ver$pitch_forearm, ver$yaw_forearm, 
+                ver$total_accel_forearm, ver$gyros_forearm_x, ver$gyros_forearm_y, 
+                ver$gyros_forearm_z, ver$accel_forearm_x, ver$accel_forearm_y,
+                ver$accel_forearm_z, ver$magnet_forearm_x, ver$magnet_forearm_y, 
+                ver$magnet_forearm_z)
+
+colnames(vern)=c( "roll_belt",
+                  "pitch_belt", "yaw_belt", "total_accel_belt", "gyros_belt_x", 
+                  "gyros_belt_y", "gyros_belt_z", "accel_belt_x", "accel_belt_y", 
+                  "accel_belt_z", "magnet_belt_x", "magnet_belt_y", "magnet_belt_z", 
+                  "roll_arm", "pitch_arm", "yaw_arm", "total_accel_arm", 
+                  "gyros_arm_x", "gyros_arm_y", "gyros_arm_z", "accel_arm_x", 
+                  "accel_arm_y", "accel_arm_z", "magnet_arm_x", "magnet_arm_y", 
+                  "magnet_arm_z", "roll_dumbbell", 
+                  "pitch_dumbbell", "yaw_dumbbell", "total_accel_dumbbell", 
+                  "gyros_dumbbell_x", "gyros_dumbbell_y", "gyros_dumbbell_z", 
+                  "accel_dumbbell_x", "accel_dumbbell_y", "accel_dumbbell_z", 
+                  "magnet_dumbbell_x", "magnet_dumbbell_y", "magnet_dumbbell_z", 
+                  "roll_forearm", "pitch_forearm", "yaw_forearm", 
+                  "total_accel_forearm", "gyros_forearm_x", "gyros_forearm_y", 
+                  "gyros_forearm_z", "accel_forearm_x", "accel_forearm_y", 
+                  "accel_forearm_z", "magnet_forearm_x", "magnet_forearm_y", 
+                  "magnet_forearm_z")
+```
+
+Next we split the data into training and testing, and train a random forest model:
+
+```{r trainmodel, cache=TRUE}
+library(caret)
+set.seed(123456)
+intrain=createDataPartition(pmln$classe, p=.5, list=FALSE)
+training = pmln[intrain,]
+testing = pmln[-intrain,]
+
+modelforest= train(classe~., method='rf', data=training)
+```
+
+To check the in-sample error, let us predict on the training data and check the confusion matrix:
+
+```{r trc, cache=TRUE}
+predtr = predict(modelforest$finalModel, newdata=training)
+table(predtr, training$classe)
+```
+
+We see perfect accuracy of classification on the training data. Since `train(..., method='rf',...)` is supposed to be using cross validation, we do not expect out of sample error to be too big either. We kept one half of our data as testing data which was not used for model training. We can use it now to get an indication of out-of-sample error. Let us predict on the testing data and check the confusion matrix:
+
+```{r tec, cache=TRUE}
+predte = predict(modelforest$finalModel, newdata=testing)
+table(predte, testing$classe)
+```
+
+Summing the off-diagonal items, we count 105 errors out of the 9810 testing observations. Our test data error rate is about 1.1%. Since we split our data randomly into training and testing and only used the training data to construct the model, this number should be indicative of out-of-sample error in general.
